@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class EnemyBehaviour : MonoBehaviour
 {
+
+
     [Header("Movement")]
     public float walkForce;
     public Transform lookAheadPoint;
