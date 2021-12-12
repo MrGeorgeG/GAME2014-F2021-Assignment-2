@@ -1,7 +1,10 @@
 fileFormatVersion: 2
 guid: 4f6b18424b765bf4e89b0f6da2749db7
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: -6326309802256333374
+    second: attack-A10_0
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -113,7 +116,28 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: attack-A10_0
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 0
+        width: 88
+        height: 59
+      alignment: 9
+      pivot: {x: 0.4264127, y: 0.5663802}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2c58079c0ce6438a0800000000000000
+      internalID: -6326309802256333374
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []

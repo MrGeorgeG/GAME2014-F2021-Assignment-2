@@ -1,7 +1,10 @@
 fileFormatVersion: 2
 guid: 1c2b5125e303c69408db3f2f6ec9ce2c
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: -8800744214463179388
+    second: attack-B2_0
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -113,7 +116,28 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: attack-B2_0
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 0
+        width: 48
+        height: 59
+      alignment: 9
+      pivot: {x: 0.5736022, y: 0.56702745}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48519d9e3c97dd580800000000000000
+      internalID: -8800744214463179388
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []

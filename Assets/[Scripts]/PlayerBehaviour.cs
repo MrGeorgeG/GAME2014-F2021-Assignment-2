@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Cinemachine;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerBehaviour : MonoBehaviour
 {
@@ -22,22 +25,77 @@ public class PlayerBehaviour : MonoBehaviour
     [Header("Animation")]
     public PlayerAnimationState state;
 
-    public Rigidbody2D rigid;
-    private Animator animController;
+    [Header("Sound FX")]
+    public List<AudioSource> audioSources;
+    public AudioSource jumpSound;
+    public AudioSource hitSound;
 
+    [Header("Dust Trail")]
+    public ParticleSystem dustTrail;
+    public Color dustTrailColour;
+
+    [Header("Screen Shake Properties")]
+    public CinemachineVirtualCamera virtualCamera;
+    public CinemachineBasicMultiChannelPerlin perlin;
+    public float shakeIntensity;
+    public float shakeDuration;
+    public float shakeTimer;
+    public bool isCameraShaking;
+
+    public int curHealth;
+    public int maxHealth;
+
+    private Rigidbody2D rigidbody;
+    private Animator animatorController;
 
     // Start is called before the first frame update
     void Start()
     {
-        rigid = GetComponent<Rigidbody2D>();
-        animController = GetComponent<Animator>();
+        isCameraShaking = false;
+        shakeTimer = shakeDuration;
+
+        rigidbody = GetComponent<Rigidbody2D>();
+        animatorController = GetComponent<Animator>();
+
+        //Assign Sounds
+        audioSources = GetComponents<AudioSource>().ToList();
+        jumpSound = audioSources[0];
+        hitSound = audioSources[1];
+
+        dustTrail = GetComponentInChildren<ParticleSystem>();
+
+        perlin = virtualCamera.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>();
+
+        curHealth = maxHealth;
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         Move();
         CheckIfGrounded();
+
+        //Camera Shake Control
+        if (isCameraShaking)
+        {
+            shakeTimer -= Time.deltaTime;
+            if (shakeTimer <= 0.0f)//timed out 
+            {
+                perlin.m_AmplitudeGain = 0.0f;
+                shakeTimer = shakeDuration;
+                isCameraShaking = false;
+            }
+        }
+
+        if (curHealth > maxHealth)
+        {
+            curHealth = maxHealth;
+        }
+        if (curHealth <= 0)
+        {
+            SceneManager.LoadScene("End");
+        }
+
     }
 
     private void Move()
@@ -46,46 +104,57 @@ public class PlayerBehaviour : MonoBehaviour
 
         if (isGrounded)
         {
-            //Keyboard Input
+            // Keyboard Input
             float y = (Input.GetAxisRaw("Vertical") + joystick.Vertical) * sensitivity;
-            float jump = Input.GetAxisRaw("Jump") + ((UIContrroller.jumpButtonDown) ? 1.0f : 0.0f);
+            float jump = Input.GetAxisRaw("Jump") + ((UIController.jumpButtonDown) ? 1.0f : 0.0f);
 
-            //Check for Flip
+            //jump activated
+            if (jump > 0)
+            {
+                jumpSound.Play();
+            }
+
+            // Check for Flip
+
             if (x != 0)
             {
                 x = FlipAnimation(x);
-                animController.SetInteger("AnimationState", (int)PlayerAnimationState.RUN);//Run state
+                animatorController.SetInteger("AnimationState", (int)PlayerAnimationState.RUN); // RUN State
                 state = PlayerAnimationState.RUN;
+                CreateDustTrail();
             }
             else
             {
-                animController.SetInteger("AnimationState", (int)PlayerAnimationState.IDLE);//Idle state AnimationStats
+                animatorController.SetInteger("AnimationState", (int)PlayerAnimationState.IDLE); // IDLE State
                 state = PlayerAnimationState.IDLE;
             }
 
             float horizontalMoveForce = x * horizontalForce;
             float jumpMoveForce = jump * verticalForce;
 
-            float mass = rigid.mass * rigid.gravityScale;
+            float mass = rigidbody.mass * rigidbody.gravityScale;
 
-            rigid.AddForce(new Vector2(horizontalMoveForce, jumpMoveForce) * mass);
-            rigid.velocity *= 0.99f;// Scaling / stopping hack
+
+            rigidbody.AddForce(new Vector2(horizontalMoveForce, jumpMoveForce) * mass);
+            rigidbody.velocity *= 0.99f; // scaling / stopping hack
         }
-        else //Air Control
+        else // Air Control
         {
-            animController.SetInteger("AnimationState", (int)PlayerAnimationState.Jump);//Jump state
-            state = PlayerAnimationState.Jump;
+            animatorController.SetInteger("AnimationState", (int)PlayerAnimationState.JUMP); // JUMP State
+            state = PlayerAnimationState.JUMP;
 
             if (x != 0)
             {
                 x = FlipAnimation(x);
 
                 float horizontalMoveForce = x * horizontalForce * airControlFactor;
-                float mass = rigid.mass * rigid.gravityScale;
+                float mass = rigidbody.mass * rigidbody.gravityScale;
 
-                rigid.AddForce(new Vector2(horizontalMoveForce, 0.0f) * mass);
+                rigidbody.AddForce(new Vector2(horizontalMoveForce, 0.0f) * mass);
             }
+            CreateDustTrail();
         }
+
     }
 
     private void CheckIfGrounded()
@@ -97,15 +166,27 @@ public class PlayerBehaviour : MonoBehaviour
 
     private float FlipAnimation(float x)
     {
-        // depending on direction scale acress the x-axis either 1 or -1
+        // depending on direction scale across the x-axis either 1 or -1
         x = (x > 0) ? 1 : -1;
 
         transform.localScale = new Vector3(x, 1.0f);
         return x;
-
     }
 
-    //EVENTS
+    private void CreateDustTrail()
+    {
+        dustTrail.GetComponent<Renderer>().material.SetColor("_Color", dustTrailColour);
+        dustTrail.Play();
+    }
+
+    private void ShakeCamera()
+    {
+        perlin.m_AmplitudeGain = shakeIntensity;
+        isCameraShaking = true;
+    }
+
+    // EVENTS
+
     private void OnCollisionEnter2D(Collision2D other)
     {
         if (other.gameObject.CompareTag("Platform"))
@@ -122,10 +203,22 @@ public class PlayerBehaviour : MonoBehaviour
         }
     }
 
-    //UTILITIES
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Attach"))
+        {
+            hitSound.Play();
+            ShakeCamera();
+            curHealth -= 1;
+        }
+    }
+
+    // UTILITIES
+
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(groundOrigin.position, groundRadius);
     }
+
 }
